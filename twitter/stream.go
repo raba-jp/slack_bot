@@ -9,7 +9,7 @@ import (
 
 var finish = make(chan bool)
 
-func getClient() anaconda.TwitterApi {
+func getClient() *anaconda.TwitterApi {
 	consumerKey := os.Getenv("TWITTER_CONSUMER_KEY")
 	consumerKeySecret := os.Getenv("TWITTER_CONSUMER_KEY_SECRET")
 	accessToken := os.Getenv("TWITTER_ACCESS_TOKEN")
@@ -26,7 +26,7 @@ func getClient() anaconda.TwitterApi {
 
 func handle(stream *anaconda.Stream, c chan Tweet) {
 	select {
-	case item := steam.C:
+	case item := <-stream.C:
 		switch status := item.(type) {
 		case anaconda.Tweet:
 			t := parseTweet(status)
