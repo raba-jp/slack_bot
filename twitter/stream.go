@@ -25,41 +25,31 @@ func getClient() *anaconda.TwitterApi {
 }
 
 func handle(stream *anaconda.Stream, c chan Tweet) {
-	select {
-	case item := <-stream.C:
-		switch status := item.(type) {
-		case anaconda.Tweet:
-			t := parseTweet(status)
-			c <- t
-		default:
-			// nop
+	for {
+		select {
+		case item := <-stream.C:
+			switch status := item.(type) {
+			case anaconda.Tweet:
+				t := parseTweet(status)
+				c <- t
+			default:
+				// nop
+			}
+		case f := <-finish:
+			if f {
+				close(c)
+				return
+			}
 		}
 	}
 }
 
 func SubscribeUserStream() chan Tweet {
 	c := make(chan Tweet)
-	go func() {
-		for {
-			handle(getClient().UserStream(url.Values{}), c)
-
-			select {
-			case f := <-finish:
-				if f {
-					close(c)
-					return
-				}
-			default:
-				// nop
-			}
-		}
-	}()
+	go handle(getClient().UserStream(url.Values{}), c)
 	return c
 }
 
 func UnsubscribeUserStream() {
 	finish <- true
-}
-
-func main() {
 }
