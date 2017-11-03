@@ -7,12 +7,21 @@ import (
 )
 
 func main() {
-	stream := twitter.SubscribeUserStream()
-	defer twitter.UnsubscribeUserStream()
+	api, err := twitter.NewApi()
+	if err != nil {
+		fmt.Printf(err.Error())
+		return
+	}
+	if err := api.SubscribeUserStream(); err != nil {
+		fmt.Printf(err.Error())
+		return
+	}
+	defer api.UnsubscribeUserStream()
 	for {
 		select {
-		case <-stream:
-			fmt.Println("test")
+		case t := <-api.Stream:
+			fmt.Println(t.User.Name)
+			fmt.Println(t.Text)
 		default:
 			// nop
 		}
