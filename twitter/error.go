@@ -2,10 +2,10 @@ package twitter
 
 import "fmt"
 
-type ConfigError struct {
+type TwitterConfigError struct {
 	Msg string
 }
 
-func (self *ConfigError) Error() string {
+func (self *TwitterConfigError) Error() string {
 	return fmt.Sprintf("ERROR: %s", self.Msg)
 }

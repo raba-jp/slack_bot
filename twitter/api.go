@@ -19,16 +19,16 @@ type Api struct {
 
 func (self *Api) validateConfig() error {
 	if self.consumerKey == "" {
-		return &ConfigError{Msg: "ConsumerKey is nil"}
+		return &TwitterConfigError{Msg: "ConsumerKey is nil"}
 	}
 	if self.consumerKeySecret == "" {
-		return &ConfigError{Msg: "ConsumerKeySecret is nil"}
+		return &TwitterConfigError{Msg: "ConsumerKeySecret is nil"}
 	}
 	if self.accessToken == "" {
-		return &ConfigError{Msg: "AccessToken is nil"}
+		return &TwitterConfigError{Msg: "AccessToken is nil"}
 	}
 	if self.accessTokenSecret == "" {
-		return &ConfigError{Msg: "AccessTokenSecret is nil"}
+		return &TwitterConfigError{Msg: "AccessTokenSecret is nil"}
 	}
 	return nil
 }
