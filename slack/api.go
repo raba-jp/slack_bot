@@ -12,6 +12,7 @@ type Api struct {
 	client            *slack.Client
 	FinishEventStream chan bool
 	EventStream       chan Event
+	Channels          []Channel
 }
 
 func (self *Api) validateConfig() error {
@@ -21,11 +22,25 @@ func (self *Api) validateConfig() error {
 	return nil
 }
 
+func (self *Api) getChannels() []Channel {
+	channels, err := self.client.GetChannels(false)
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		return err
+	}
+	var c []Channel
+	for _, channel := range channels {
+		append(c, &Channel{ID: channel.ID, Name: channel.Name})
+	}
+	return c
+}
+
 func (self *Api) initialize() error {
 	if err := self.validateConfig(); err != nil {
 		return err
 	}
 	self.client = slack.New(self.apiToken)
+	self.Channels = self.getChannels()
 	return nil
 }
 
