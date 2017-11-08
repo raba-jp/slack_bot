@@ -64,7 +64,7 @@ func (self *Api) SubscribeEventStream() error {
 		for msg := range rtm.IncomingEvents {
 			switch ev := msg.Data.(type) {
 			case *slack.MessageEvent:
-				fmt.Println(ev)
+				fmt.Printf("User: %s", ev.Channel)
 			default:
 				// nop
 			}
@@ -75,4 +75,8 @@ func (self *Api) SubscribeEventStream() error {
 
 func (self *Api) UnsubscribeEventStream() {
 	self.FinishEventStream <- true
+}
+
+func (self *Api) PostMessage(channel Channel) {
+
 }

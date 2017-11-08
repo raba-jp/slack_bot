@@ -49,9 +49,15 @@
   packages = ["context","websocket"]
   revision = "c73622c77280266305273cb545f54516ced95b93"
 
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "df4a127647ae1479137760ca0e90b6c57ef91528d6a219c2429730823a16d6d8"
+  inputs-digest = "9e0fda7131fb0a083640672400f234cccb49d09c43f37018ac48aaf46b2491f4"
   solver-name = "gps-cdcl"
   solver-version = 1
