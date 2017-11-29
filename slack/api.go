@@ -7,7 +7,12 @@ import (
 	"github.com/nlopes/slack"
 )
 
-type Api struct {
+type Api interface {
+	SubscribeEventStream() error
+	UnsubscribeEventStream()
+}
+
+type ApiImpl struct {
 	apiToken          string
 	client            *slack.Client
 	FinishEventStream chan bool
@@ -15,14 +20,14 @@ type Api struct {
 	Channels          []Channel
 }
 
-func (self *Api) validateConfig() error {
+func (self *ApiImpl) validateConfig() error {
 	if self.apiToken == "" {
 		return &SlackConfigError{Msg: "API Token is nil"}
 	}
 	return nil
 }
 
-func (self *Api) getChannels() []Channel {
+func (self *ApiImpl) getChannels() []Channel {
 	channels, err := self.client.GetChannels(false)
 	if err != nil {
 		fmt.Printf("ERROR: %s\n", err)
@@ -35,7 +40,7 @@ func (self *Api) getChannels() []Channel {
 	return c
 }
 
-func (self *Api) initialize() error {
+func (self *ApiImpl) initialize() error {
 	if err := self.validateConfig(); err != nil {
 		return err
 	}
@@ -56,7 +61,7 @@ func NewApi() (*Api, error) {
 	return api, nil
 }
 
-func (self *Api) SubscribeEventStream() error {
+func (self *ApiImpl) SubscribeEventStream() error {
 	rtm := self.client.NewRTM()
 	go rtm.ManageConnection()
 
@@ -73,10 +78,10 @@ func (self *Api) SubscribeEventStream() error {
 	return nil
 }
 
-func (self *Api) UnsubscribeEventStream() {
+func (self *ApiImpl) UnsubscribeEventStream() {
 	self.FinishEventStream <- true
 }
 
-func (self *Api) PostMessage(channel Channel) {
+func (self *ApiImpl) PostMessage(channel Channel) {
 
 }

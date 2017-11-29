@@ -11,7 +11,7 @@ type Config struct {
 	Channels []string `yaml:"channels"`
 }
 
-func ReadConfig() (Config, error) {
+func NewConfig() (Config, error) {
 	buf, err := ioutil.ReadFile("./config.yml")
 	if err != nil {
 		return nil, err

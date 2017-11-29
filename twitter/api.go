@@ -3,11 +3,17 @@ package twitter
 import (
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/ChimeraCoder/anaconda"
 )
 
-type Api struct {
+type Api interface {
+	SubscribeUserStream() error
+	UnsubscribeUserStream()
+}
+
+type ApiImpl struct {
 	consumerKey       string
 	consumerKeySecret string
 	accessToken       string
@@ -15,33 +21,6 @@ type Api struct {
 	client            *anaconda.TwitterApi
 	FinishUserStream  chan bool
 	Stream            chan Tweet
-}
-
-func (self *Api) validateConfig() error {
-	if self.consumerKey == "" {
-		return &TwitterConfigError{Msg: "ConsumerKey is nil"}
-	}
-	if self.consumerKeySecret == "" {
-		return &TwitterConfigError{Msg: "ConsumerKeySecret is nil"}
-	}
-	if self.accessToken == "" {
-		return &TwitterConfigError{Msg: "AccessToken is nil"}
-	}
-	if self.accessTokenSecret == "" {
-		return &TwitterConfigError{Msg: "AccessTokenSecret is nil"}
-	}
-	return nil
-}
-
-func (self *Api) initialize() error {
-	if err := self.validateConfig(); err != nil {
-		return err
-	}
-	anaconda.SetConsumerKey(self.consumerKey)
-	anaconda.SetConsumerSecret(self.consumerKeySecret)
-	self.client = anaconda.NewTwitterApi(self.accessToken, self.accessTokenSecret)
-	self.client.SetLogger(anaconda.BasicLogger)
-	return nil
 }
 
 func NewApi() (*Api, error) {
@@ -59,7 +38,7 @@ func NewApi() (*Api, error) {
 	return api, nil
 }
 
-func (self *Api) SubscribeUserStream() error {
+func (self *ApiImpl) SubscribeUserStream() error {
 	if err := self.validateConfig(); err != nil {
 		return err
 	}
@@ -84,6 +63,33 @@ func (self *Api) SubscribeUserStream() error {
 	return nil
 }
 
-func (self *Api) UnsubscribeUserStream() {
+func (self *ApiImpl) UnsubscribeUserStream() {
 	self.FinishUserStream <- true
+}
+
+func (self *ApiImpl) validateConfig() error {
+	if self.consumerKey == "" {
+		return &TwitterConfigError{Msg: "ConsumerKey is nil"}
+	}
+	if self.consumerKeySecret == "" {
+		return &TwitterConfigError{Msg: "ConsumerKeySecret is nil"}
+	}
+	if self.accessToken == "" {
+		return &TwitterConfigError{Msg: "AccessToken is nil"}
+	}
+	if self.accessTokenSecret == "" {
+		return &TwitterConfigError{Msg: "AccessTokenSecret is nil"}
+	}
+	return nil
+}
+
+func (self *ApiImpl) initialize() error {
+	if err := self.validateConfig(); err != nil {
+		return err
+	}
+	anaconda.SetConsumerKey(self.consumerKey)
+	anaconda.SetConsumerSecret(self.consumerKeySecret)
+	self.client = anaconda.NewTwitterApi(self.accessToken, self.accessTokenSecret)
+	self.client.SetLogger(anaconda.BasicLogger)
+	return nil
 }
