@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/raba-jp/twitter_client_for_slack/slack"
-	"github.com/raba-jp/twitter_client_for_slack/twitter"
+	"github.com/raba-jp/slack_bot/slack"
+	"github.com/raba-jp/slack_bot/twitter"
 )
 
 func main() {
