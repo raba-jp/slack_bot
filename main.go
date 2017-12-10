@@ -12,18 +12,20 @@ func main() {
 }
 
 func slackMain() {
-	api, err := slack.NewApi()
+	api, err := slack.NewAPI()
 	if err != nil {
+		fmt.Println(err.Error())
 		return
 	}
 	if err := api.SubscribeEventStream(); err != nil {
+		fmt.Println(err.Error())
 		return
 	}
 	defer api.UnsubscribeEventStream()
 }
 
 func twitterMain() {
-	api, err := twitter.NewApi()
+	api, err := twitter.NewAPI()
 	if err != nil {
 		fmt.Printf(err.Error())
 		return
@@ -35,7 +37,7 @@ func twitterMain() {
 	defer api.UnsubscribeUserStream()
 	for {
 		select {
-		case t := <-api.Stream:
+		case t := <-api.GetStream():
 			fmt.Println(t.User.Name)
 			fmt.Println(t.Text)
 		default:

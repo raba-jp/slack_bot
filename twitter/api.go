@@ -3,34 +3,37 @@ package twitter
 import (
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/ChimeraCoder/anaconda"
 )
 
-type Api interface {
+// API is Twitter User Stream API interface
+type API interface {
+	GetStream() chan Tweet
 	SubscribeUserStream() error
 	UnsubscribeUserStream()
 }
 
-type ApiImpl struct {
+// APIImpl is Twitter User Stream API implementation
+type APIImpl struct {
 	consumerKey       string
 	consumerKeySecret string
 	accessToken       string
 	accessTokenSecret string
 	client            *anaconda.TwitterApi
-	FinishUserStream  chan bool
-	Stream            chan Tweet
+	finishStream      chan bool
+	stream            chan Tweet
 }
 
-func NewApi() (*Api, error) {
-	api := &Api{
+// NewAPI is return initialized and implemented API struct
+func NewAPI() (*APIImpl, error) {
+	api := &APIImpl{
 		consumerKey:       os.Getenv("TWITTER_CONSUMER_KEY"),
 		consumerKeySecret: os.Getenv("TWITTER_CONSUMER_KEY_SECRET"),
 		accessToken:       os.Getenv("TWITTER_ACCESS_TOKEN"),
 		accessTokenSecret: os.Getenv("TWITTER_ACCESS_TOKEN_SECRET"),
-		FinishUserStream:  make(chan bool),
-		Stream:            make(chan Tweet),
+		finishStream:      make(chan bool),
+		stream:            make(chan Tweet),
 	}
 	if err := api.initialize(); err != nil {
 		return nil, err
@@ -38,22 +41,28 @@ func NewApi() (*Api, error) {
 	return api, nil
 }
 
-func (self *ApiImpl) SubscribeUserStream() error {
-	if err := self.validateConfig(); err != nil {
+// GetStream is return Stream channel
+func (api *APIImpl) GetStream() chan Tweet {
+	return api.stream
+}
+
+// SubscribeUserStream is posted tweet to "Stream" channel
+func (api *APIImpl) SubscribeUserStream() error {
+	if err := api.validateConfig(); err != nil {
 		return err
 	}
 	go func() {
-		stream := self.client.UserStream(url.Values{})
+		stream := api.client.UserStream(url.Values{})
 		for {
 			select {
 			case item := <-stream.C:
 				switch status := item.(type) {
 				case anaconda.Tweet:
-					self.Stream <- parseTweet(status)
+					api.stream <- parseTweet(status)
 				default:
 					// nop
 				}
-			case f := <-self.FinishUserStream:
+			case f := <-api.finishStream:
 				if f {
 					return
 				}
@@ -63,33 +72,35 @@ func (self *ApiImpl) SubscribeUserStream() error {
 	return nil
 }
 
-func (self *ApiImpl) UnsubscribeUserStream() {
-	self.FinishUserStream <- true
+// UnsubscribeUserStream is stoped posts tweet to "Stream" channel
+func (api *APIImpl) UnsubscribeUserStream() {
+	api.finishStream <- true
+	close(api.stream)
 }
 
-func (self *ApiImpl) validateConfig() error {
-	if self.consumerKey == "" {
+func (api *APIImpl) validateConfig() error {
+	if api.consumerKey == "" {
 		return &TwitterConfigError{Msg: "ConsumerKey is nil"}
 	}
-	if self.consumerKeySecret == "" {
+	if api.consumerKeySecret == "" {
 		return &TwitterConfigError{Msg: "ConsumerKeySecret is nil"}
 	}
-	if self.accessToken == "" {
+	if api.accessToken == "" {
 		return &TwitterConfigError{Msg: "AccessToken is nil"}
 	}
-	if self.accessTokenSecret == "" {
+	if api.accessTokenSecret == "" {
 		return &TwitterConfigError{Msg: "AccessTokenSecret is nil"}
 	}
 	return nil
 }
 
-func (self *ApiImpl) initialize() error {
-	if err := self.validateConfig(); err != nil {
+func (api *APIImpl) initialize() error {
+	if err := api.validateConfig(); err != nil {
 		return err
 	}
-	anaconda.SetConsumerKey(self.consumerKey)
-	anaconda.SetConsumerSecret(self.consumerKeySecret)
-	self.client = anaconda.NewTwitterApi(self.accessToken, self.accessTokenSecret)
-	self.client.SetLogger(anaconda.BasicLogger)
+	anaconda.SetConsumerKey(api.consumerKey)
+	anaconda.SetConsumerSecret(api.consumerKeySecret)
+	api.client = anaconda.NewTwitterApi(api.accessToken, api.accessTokenSecret)
+	api.client.SetLogger(anaconda.BasicLogger)
 	return nil
 }

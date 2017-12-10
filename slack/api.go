@@ -7,53 +7,26 @@ import (
 	"github.com/nlopes/slack"
 )
 
-type Api interface {
+// API is Slack API interface
+type API interface {
 	SubscribeEventStream() error
 	UnsubscribeEventStream()
 }
 
-type ApiImpl struct {
-	apiToken          string
-	client            *slack.Client
-	FinishEventStream chan bool
-	EventStream       chan Event
-	Channels          []Channel
+// APIImpl is Slack API implementation
+type APIImpl struct {
+	apiToken     string
+	client       *slack.Client
+	finishStream chan bool
+	stream       chan Event
 }
 
-func (self *ApiImpl) validateConfig() error {
-	if self.apiToken == "" {
-		return &SlackConfigError{Msg: "API Token is nil"}
-	}
-	return nil
-}
-
-func (self *ApiImpl) getChannels() []Channel {
-	channels, err := self.client.GetChannels(false)
-	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		return err
-	}
-	var c []Channel
-	for _, channel := range channels {
-		append(c, &Channel{ID: channel.ID, Name: channel.Name})
-	}
-	return c
-}
-
-func (self *ApiImpl) initialize() error {
-	if err := self.validateConfig(); err != nil {
-		return err
-	}
-	self.client = slack.New(self.apiToken)
-	self.Channels = self.getChannels()
-	return nil
-}
-
-func NewApi() (*Api, error) {
-	api := &Api{
-		apiToken:          os.Getenv("SLACK_OAUTH_ACCESS_TOKEN"),
-		FinishEventStream: make(chan bool),
-		EventStream:       make(chan Event),
+// NewAPI is return initialized and implemented API struct
+func NewAPI() (*APIImpl, error) {
+	api := &APIImpl{
+		apiToken:     os.Getenv("SLACK_OAUTH_ACCESS_TOKEN"),
+		finishStream: make(chan bool),
+		stream:       make(chan Event),
 	}
 	if err := api.initialize(); err != nil {
 		return nil, err
@@ -61,8 +34,28 @@ func NewApi() (*Api, error) {
 	return api, nil
 }
 
-func (self *ApiImpl) SubscribeEventStream() error {
-	rtm := self.client.NewRTM()
+// GetStream is return stream channel
+func (api *APIImpl) GetStream() chan Event {
+	return api.stream
+}
+
+// GetChannels is return Slack channels
+func (api *APIImpl) GetChannels() ([]*Channel, error) {
+	channels, err := api.client.GetChannels(false)
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		return nil, err
+	}
+	var c []*Channel
+	for _, channel := range channels {
+		c = append(c, &Channel{ID: channel.ID, Name: channel.Name})
+	}
+	return c, nil
+}
+
+// SubscribeEventStream is posted events to "EventStream" channel
+func (api *APIImpl) SubscribeEventStream() error {
+	rtm := api.client.NewRTM()
 	go rtm.ManageConnection()
 
 	go func() {
@@ -78,10 +71,28 @@ func (self *ApiImpl) SubscribeEventStream() error {
 	return nil
 }
 
-func (self *ApiImpl) UnsubscribeEventStream() {
-	self.FinishEventStream <- true
+// UnsubscribeEventStream is stoped posts events to "EventStream" channel
+func (api *APIImpl) UnsubscribeEventStream() {
+	api.finishStream <- true
+	close(api.stream)
 }
 
-func (self *ApiImpl) PostMessage(channel Channel) {
+// PostMessage is post message
+func (api *APIImpl) PostMessage(channel Channel) {
 
+}
+
+func (api *APIImpl) validateConfig() error {
+	if api.apiToken == "" {
+		return &SlackConfigError{Msg: "API Token is nil"}
+	}
+	return nil
+}
+
+func (api *APIImpl) initialize() error {
+	if err := api.validateConfig(); err != nil {
+		return err
+	}
+	api.client = slack.New(api.apiToken)
+	return nil
 }
